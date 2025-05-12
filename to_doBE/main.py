@@ -21,14 +21,6 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
-@app.get("/get_task")
-def get_task():
-    cursor = conn.cursor(cursor_factory=RealDictCursor)  
-    cursor.execute("SELECT * FROM todo") 
-    records = cursor.fetchall()
-    cursor.close()  
-    return records
-
 @app.post("/add_task")
 def add_task(task: str = Form(...)):
     cursor = conn.cursor()
@@ -38,10 +30,26 @@ def add_task(task: str = Form(...)):
     return {"message": "Added Successfully"}
 
 @app.post("/delete_task")
-def delete_task(id: str = Form(...)): 
+def delete_task(id: int = Form(...)): 
     cursor = conn.cursor()
     cursor.execute("DELETE FROM todo WHERE id=%s", (id,))
     conn.commit()
     cursor.close() 
     return {"message": "Deleted Successfully"}
+
+@app.get("/get_task")
+def get_task(id: int = None):
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        if id is not None:
+            cursor.execute("SELECT * FROM todo WHERE id = %s", (id,))
+        else:
+            cursor.execute("SELECT * FROM todo")
+        records = cursor.fetchall()
+        return records
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        cursor.close()
+
 
